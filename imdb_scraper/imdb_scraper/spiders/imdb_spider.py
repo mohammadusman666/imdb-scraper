@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import scrapy
-import csv
+import re, csv
 
 class ImdbSpiderSpider(scrapy.Spider):
     name = 'imdb_spider'
@@ -19,8 +19,6 @@ class ImdbSpiderSpider(scrapy.Spider):
         for link in links:
             yield response.follow('https://www.imdb.com' + link, callback=self.parse_movie) # send a request to each movie url
 
-        self.write_to_csv() # save all of the movies information to a csv
-
     def parse_movie(self, response):
         temp_dict = {} # make an empty dictionary to store a particular movie's information
 
@@ -28,41 +26,35 @@ class ImdbSpiderSpider(scrapy.Spider):
         temp_dict['total_number_of_ratings'] = int(rating_info[3].replace(',', '')) # get total number of ratings
         temp_dict['rating_score'] = float(rating_info[0]) # get rating score
 
-        temp_dict['genre'] = response.css('div.subtext a::text').extract()[0]
+        temp_dict['genre'] = response.css('div.subtext a::text').extract()[0] # get genre
 
-        isBudget = False
-        isGross = False
         budget_info = response.xpath(
-            '//div[contains(@class, "txt-block") and contains(.//h4, "Budget:")]/text()').extract()
+            '//div[contains(@class, "txt-block") and contains(.//h4, "Budget:")]/text()').extract() # get budget
         gross_info = response.xpath(
-            '//div[contains(@class, "txt-block") and contains(.//h4, "Gross USA:")]/text()').extract()
+            '//div[contains(@class, "txt-block") and contains(.//h4, "Gross USA:")]/text()').extract() # get gross usa
 
         if (budget_info):
             budget_info = budget_info[1]
-            budget_info = budget_info.strip()
-            budget_info = budget_info.replace('$', '')
-            temp_dict['budget'] = budget_info.replace(',', '')
+            temp_dict['budget'] = int(re.sub('\D', '', budget_info)) # remove characters except digits
         else:
             temp_dict['budget'] = None
 
         if (gross_info):
             gross_info = gross_info[1]
-            gross_info = gross_info.strip()
-            gross_info = gross_info.replace('$', '')
-            temp_dict['gross_usa'] = gross_info.replace(',', '')
+            temp_dict['gross_usa'] = int(re.sub('\D', '', gross_info)) # remove characters except digits
         else:
             temp_dict['gross_usa'] = None
 
-        print(temp_dict)
+        self.movies[str(self.i)] = temp_dict
+        self.i += 1
 
-    def write_to_csv(self):
-        # with open('../../../movies_file.csv', mode='w') as movies_file:
-        #     field_names = ['total_number_of_ratings', 'rating_score', 'genre', 'budget', 'gross_usa']
-        #     writer = csv.DictWriter(movies_file, fieldnames=field_names)
+    def closed(self, reason):
+        # save all of the movies information to a csv
+        with open('../data/movies_file.csv', mode='w', newline='') as movies_file:
+            field_names = ['total_number_of_ratings', 'rating_score', 'genre', 'budget', 'gross_usa']
+            writer = csv.DictWriter(movies_file, fieldnames=field_names)
 
-        #     writer.writeheader()
+            writer.writeheader() # write the header to the csv
             
-        #     for movie in self.movies:
-        #         writer.writerow(movie)
-
-        return
+            for key, movie in self.movies.items():
+                writer.writerow(movie) # write movie information to the csv
