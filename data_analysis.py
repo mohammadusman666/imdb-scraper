@@ -8,13 +8,11 @@ df = pd.read_csv("./data/movies_file.csv")
 # Part 1
 # Relation between Total number of ratings & Rating score
 plt.scatter(df['total_number_of_ratings'], df['rating_score'])
-plt.show()
 plt.savefig('./data/total_number_of_ratings-rating_score.png')
 
 # Part 2
 # Relation between Budget & Rating score
 plt.scatter(df['budget'], df['rating_score'])
-plt.show()
 plt.savefig('./data/budget-rating_score.png')
 
 # Part 3
