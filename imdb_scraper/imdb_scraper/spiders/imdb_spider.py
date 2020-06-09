@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import scrapy
-import re, csv
+import re, csv, os
 
 class ImdbSpiderSpider(scrapy.Spider):
     name = 'imdb_spider'
@@ -26,7 +26,8 @@ class ImdbSpiderSpider(scrapy.Spider):
         temp_dict['total_number_of_ratings'] = int(rating_info[3].replace(',', '')) # get total number of ratings
         temp_dict['rating_score'] = float(rating_info[0]) # get rating score
 
-        temp_dict['genre'] = response.css('div.subtext a::text').extract()[0] # get genre
+        temp_dict['genre'] = ','.join(response.css('div.subtext a::text').extract()[:-1]) # get genre
+        print(temp_dict['genre'])
 
         budget_info = response.xpath(
             '//div[contains(@class, "txt-block") and contains(.//h4, "Budget:")]/text()').extract() # get budget
@@ -49,8 +50,11 @@ class ImdbSpiderSpider(scrapy.Spider):
         self.i += 1
 
     def closed(self, reason):
+        if not os.path.exists('../data'):
+            os.makedirs('../data')
+
         # save all of the movies information to a csv
-        with open('../data/movies_file.csv', mode='w', newline='') as movies_file:
+        with open('../data/movies_file.csv', mode='w+', newline='') as movies_file:
             field_names = ['total_number_of_ratings', 'rating_score', 'genre', 'budget', 'gross_usa']
             writer = csv.DictWriter(movies_file, fieldnames=field_names)
 

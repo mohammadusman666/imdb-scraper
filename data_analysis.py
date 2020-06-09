@@ -24,11 +24,18 @@ plt.savefig('./data/budget-rating_score.png')
 
 # Part 3
 # Average earnings (Gross USA) of each Genre in descending order
-genres = df.genre.unique() # to get all unique generes
+# to get all unique genres
+genres = []
+for index, row in df.iterrows():
+    temp_genres = row['genre'].split(',')
+    for genre in temp_genres:
+        if genre not in genres:
+            genres.append(genre)
+
 average_gross = {}
 for genre in genres:
-    tempDf = df[df.genre == genre] # filtering dataframe for a particular genere
-    avg_gross = tempDf.gross_usa.mean() # taking average of a particular genere
+    tempDf = df['genre'].str.contains(genre) # filtering dataframe for a particular genere
+    avg_gross = df[tempDf].gross_usa.mean() # taking average of a particular genere
     average_gross[genre] = int(avg_gross)
 
 average_gross = sorted(average_gross.items(), key=lambda x: x[1], reverse=True) # sort it in descending order
